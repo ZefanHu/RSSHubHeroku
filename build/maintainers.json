@@ -2469,6 +2469,18 @@
   "/eastday/sh": [
     "saury"
   ],
+  "/eastmoney/gerenzhongxin/cfh/:uid": [
+    "AwesomeDog"
+  ],
+  "/eastmoney/gerenzhongxin/gather/:uid": [
+    "AwesomeDog"
+  ],
+  "/eastmoney/gerenzhongxin/guba/:uid": [
+    "AwesomeDog"
+  ],
+  "/eastmoney/gerenzhongxin/trpl/:uid": [
+    "AwesomeDog"
+  ],
   "/eastmoney/report/:category": [
     "syzq"
   ],
@@ -5853,6 +5865,9 @@
   ],
   "/ntdtv/:language/:id": [
     "Fatpandac"
+  ],
+  "/ntrblog/articles": [
+    "keocheung"
   ],
   "/nua/dc/:type": [
     "evnydd0sf"
