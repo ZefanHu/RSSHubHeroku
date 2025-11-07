@@ -22,7 +22,7 @@
     ],
     "scripts": {
         "build": "tsx scripts/workflow/build-routes.ts && tsdown",
-        "build:vercel": "tsx scripts/workflow/build-routes.ts && tsdown --config ./tsdown-vercel.config.ts && mv dist/server.js dist/index.js && tsx scripts/workflow/build-vercel-packagejson.ts",
+        "build:vercel": "tsx scripts/workflow/build-routes.ts && tsdown --config ./tsdown-vercel.config.ts && mv dist/server.mjs dist/index.mjs && tsx scripts/workflow/build-vercel-packagejson.ts",
         "build:docs": "tsx scripts/workflow/build-docs.ts",
         "dev": "cross-env NODE_ENV=dev NODE_OPTIONS='--max-http-header-size=32768' tsx watch --inspect --clear-screen=false lib/index.ts",
         "dev:cache": "cross-env NODE_ENV=production NODE_OPTIONS='--max-http-header-size=32768' tsx watch --clear-screen=false lib/index.ts",
@@ -84,7 +84,7 @@
         "etag": "1.8.1",
         "fanfou-sdk": "6.0.0",
         "form-data": "4.0.4",
-        "googleapis": "164.1.0",
+        "googleapis": "165.0.0",
         "hono": "4.10.4",
         "html-to-text": "9.0.5",
         "http-cookie-agent": "6.0.8",
