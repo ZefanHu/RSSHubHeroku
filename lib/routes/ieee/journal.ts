@@ -1,11 +1,11 @@
-import { Route } from '@/types';
+import { load } from 'cheerio';
 
+import type { Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
 import ofetch from '@/utils/ofetch';
-import { load } from 'cheerio';
-import path from 'node:path';
-import { art } from '@/utils/render';
+
+import { renderDescription } from './templates/description';
 
 const ieeeHost = 'https://ieeexplore.ieee.org';
 
@@ -26,8 +26,7 @@ async function handler(ctx) {
     const publicationNumber = ctx.req.param('punumber');
     const earlyAccess = !!ctx.req.param('earlyAccess');
 
-    const metadata = await fetchMetadata(publicationNumber);
-    const { displayTitle, currentIssue, preprintIssue, coverImagePath } = metadata;
+    const { displayTitle, currentIssue, preprintIssue, coverImagePath } = await fetchMetadata(publicationNumber);
     const { issueNumber, volume } = earlyAccess ? preprintIssue : currentIssue;
 
     const tocData = await fetchTOCData(publicationNumber, issueNumber);
@@ -45,14 +44,13 @@ async function handler(ctx) {
                 const $ = load(response);
 
                 const target = $('script[type="text/javascript"]:contains("xplGlobal.document.metadata")');
-                const code = target.text() || '';
+                const code = target.text();
 
                 // 捕获等号右侧的 JSON（最小匹配直到紧随的分号）
                 const m = code.match(/xplGlobal\.document\.metadata\s*=\s*(\{[\s\S]*?\})\s*;/);
-                item.abstract = m ? ((JSON.parse(m[1]) as { abstract?: string }).abstract ?? ' ') : ' ';
-                item.description = art(path.join(__dirname, 'templates/description.art'), {
-                    item,
-                });
+                const metadata: { abstract?: string } = m ? JSON.parse(m[1]) : {};
+                item.abstract = metadata.abstract ?? ' ';
+                item.description = renderDescription(item);
 
                 return item;
             })
