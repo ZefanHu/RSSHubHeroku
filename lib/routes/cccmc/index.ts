@@ -1,34 +1,35 @@
-import { type Data, type DataItem, type Route, ViewType } from '@/types';
+import type { Cheerio, CheerioAPI } from 'cheerio';
+import { load } from 'cheerio';
+import type { Element } from 'domhandler';
+import type { Context } from 'hono';
 
+import type { Data, DataItem, Language, Route } from '@/types';
+import { ViewType } from '@/types';
 import cache from '@/utils/cache';
 import ofetch from '@/utils/ofetch';
 import { parseDate } from '@/utils/parse-date';
-
-import { type CheerioAPI, type Cheerio, load } from 'cheerio';
-import type { Element } from 'domhandler';
-import { type Context } from 'hono';
+import { getRouteLimit } from '@/utils/route-limit';
+import timezone from '@/utils/timezone';
 
 export const handler = async (ctx: Context): Promise<Data> => {
     const { category = 'ywgg/tzgg' } = ctx.req.param();
-    const limit: number = Number.parseInt(ctx.req.query('limit') ?? '15', 10);
+    const limit = getRouteLimit(ctx, 15);
 
-    const baseUrl: string = 'https://www.cccmc.org.cn';
-    const targetUrl: string = new URL(category.endsWith('/') ? category : `${category}/`, baseUrl).href;
+    const baseUrl = 'https://www.cccmc.org.cn';
+    const targetUrl = `${baseUrl}/${category.endsWith('/') ? category : `${category}/`}`;
 
     const response = await ofetch(targetUrl);
     const $: CheerioAPI = load(response);
-    const language = $('html').attr('lang') ?? 'zh-CN';
+    const language = ($('html').attr('lang') ?? 'zh-CN') as Language;
 
-    let items: DataItem[] = [];
+    const regex = /\{url:'(.*)',title:'(.*)',time:'(.*)'\},/g;
 
-    const regex: RegExp = /\{url:'(.*)',title:'(.*)',time:'(.*)'\},/g;
-
-    items =
+    let items: DataItem[] =
         response
             .match(regex)
             ?.slice(0, limit)
             .map((item): DataItem => {
-                const matches = item.match(/'(.*?)'/);
+                const matches = item.match(/\{url:'(.*)',title:'(.*)',time:'(.*)'\},/);
 
                 const title: string = matches?.[2] ?? '';
                 const pubDateStr: string | undefined = matches?.[3];
@@ -37,9 +38,9 @@ export const handler = async (ctx: Context): Promise<Data> => {
 
                 const processedItem: DataItem = {
                     title,
-                    pubDate: pubDateStr ? parseDate(pubDateStr) : undefined,
+                    pubDate: pubDateStr ? timezone(parseDate(pubDateStr), 8) : undefined,
                     link: linkUrl ? new URL(linkUrl, baseUrl).href : undefined,
-                    updated: upDatedStr ? parseDate(upDatedStr) : undefined,
+                    updated: upDatedStr ? timezone(parseDate(upDatedStr), 8) : undefined,
                     language,
                 };
 
@@ -54,11 +55,11 @@ export const handler = async (ctx: Context): Promise<Data> => {
                 }
 
                 return cache.tryGet(item.link, async (): Promise<DataItem> => {
-                    const detailResponse = await ofetch(item.link);
+                    const detailResponse = await ofetch(item.link!);
                     const $$: CheerioAPI = load(detailResponse);
 
-                    const title: string = $$('div.title').text();
-                    const description: string = $$('div#article-content').html() ?? '';
+                    const title: string = $$('div.title').text() || item.title;
+                    const description = $$('div#article-content').html();
                     const pubDateStr: string | undefined = $$('span.time').text().split(/：/).pop();
                     const authorEls: Element[] = $$('span.form, span.from').toArray();
                     const authors: DataItem['author'] = authorEls.map((authorEl) => {
@@ -73,13 +74,13 @@ export const handler = async (ctx: Context): Promise<Data> => {
                     const processedItem: DataItem = {
                         title,
                         description,
-                        pubDate: pubDateStr ? parseDate(pubDateStr) : item.pubDate,
+                        pubDate: pubDateStr ? timezone(parseDate(pubDateStr), 8) : item.pubDate,
                         author: authors,
                         content: {
                             html: description,
-                            text: description,
+                            text: $$('div#article-content').text(),
                         },
-                        updated: upDatedStr ? parseDate(upDatedStr) : item.updated,
+                        updated: upDatedStr ? timezone(parseDate(upDatedStr), 8) : item.updated,
                         language,
                     };
 
@@ -96,10 +97,9 @@ export const handler = async (ctx: Context): Promise<Data> => {
 
     return {
         title,
-        description: title.split(/-/)[0].trim(),
+        description: title.split(/-/, 1)[0].trim(),
         link: targetUrl,
         item: items,
-        allowEmpty: true,
         image: $('img.logo').attr('src'),
         author: title.split(/-/)?.pop()?.trim(),
         language,
@@ -153,8 +153,8 @@ export const route: Route = {
 | [党群动态](https://www.cccmc.org.cn/shdj/dqdt/) | [党内法规](https://www.cccmc.org.cn/shdj/dnfg/) | [青年工作](https://www.cccmc.org.cn/shdj/qngz/) |
 | ----------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- |
 | [shdj/dqdt](https://rsshub.app/cccmc/shdj/dqdt) | [shdj/dnfg](https://rsshub.app/cccmc/shdj/dnfg) | [shdj/qngz](https://rsshub.app/cccmc/shdj/qngz) |
-</details>
-`,
+
+</details>`,
     categories: ['new-media'],
     features: {
         requireConfig: false,
@@ -167,12 +167,8 @@ export const route: Route = {
     },
     radar: [
         {
-            source: ['www.cccmc.org.cn/:category'],
-            target: (params) => {
-                const category: string = params.category;
-
-                return `/cccmc${category ? `/${category}` : ''}`;
-            },
+            source: ['www.cccmc.org.cn/', 'www.cccmc.org.cn/ywgg/tzgg/'],
+            target: '/ywgg/tzgg',
         },
         {
             title: '商业机会 - 供应信息',

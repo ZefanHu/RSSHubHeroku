@@ -1,9 +1,11 @@
-import { Route } from '@/types';
 import { load } from 'cheerio';
+
+import InvalidParameterError from '@/errors/types/invalid-parameter';
+import type { Route } from '@/types';
 import { parseDate } from '@/utils/parse-date';
 import timezone from '@/utils/timezone';
+
 import { getContent } from './utils';
-import InvalidParameterError from '@/errors/types/invalid-parameter';
 
 const map = new Map([
     ['xyxw', { title: '南京理工大学计算机学院 -- 学院新闻', id: '/1817' }],
@@ -44,15 +46,15 @@ async function handler(ctx) {
     const siteUrl = host + id + '/list.htm';
     const html = await getContent(siteUrl, true);
     const $ = load(html);
-    const list = $('div#wp_news_w9').find('a');
+    const list = $('.news_list li.news');
 
     return {
         title: info.title,
         link: siteUrl,
         item: list.toArray().map((item) => ({
-            title: $(item).find('span[class="column-news-title"]').text().trim(),
-            pubDate: timezone(parseDate($(item).find('span[class="column-news-date news-date-hide"]').text(), 'YYYY-MM-DD'), +8),
-            link: $(item).attr('href'),
+            title: $(item).find('.news_title').text(),
+            pubDate: timezone(parseDate($(item).find('.news_meta').text(), 'YYYY-MM-DD'), 8),
+            link: new URL($(item).find('a').attr('href')!, siteUrl).href,
         })),
     };
 }

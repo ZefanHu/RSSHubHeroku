@@ -1,6 +1,8 @@
-import { Route } from '@/types';
-import ofetch from '@/utils/ofetch';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import ofetch from '@/utils/ofetch';
+
 import { baseUrl, parseItem } from './utils';
 
 export const route: Route = {
@@ -26,17 +28,19 @@ async function handler(ctx) {
     const type = ctx.req.param('type');
 
     const link = new URL(`${baseUrl}/news/index.php`, baseUrl);
-    link.searchParams.append('type', type);
+    if (type) {
+        link.searchParams.append('type', type);
+    }
     const response = await ofetch(link.href);
     const $ = load(response);
 
     const list = $('.col-md-left .title a')
         .toArray()
         .map((item) => {
-            item = $(item);
+            const $item = $(item);
             return {
-                title: item.text(),
-                link: new URL(item.attr('href'), link.href).href,
+                title: $item.text(),
+                link: new URL($item.attr('href')!, link.href).href,
             };
         });
 

@@ -1,5 +1,7 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
 import ofetch from '@/utils/ofetch';
+
+import { renderPost } from './templates/post';
 
 export const route: Route = {
     path: '/keyword/:keyword',
@@ -27,7 +29,7 @@ async function handler(ctx) {
     const items = data.posts.map((post) => ({
         title: post.record.text,
         link: `https://bsky.app/profile/${post.author.handle}/post/${post.uri.split('/').pop()}`,
-        description: post.record.text,
+        description: renderPost({ text: post.record.text, embed: post.embed }),
         pubDate: new Date(post.record.createdAt),
         author: [
             {

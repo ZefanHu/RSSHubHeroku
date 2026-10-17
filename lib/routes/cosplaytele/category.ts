@@ -1,9 +1,12 @@
-import { Route } from '@/types';
+import { load } from 'cheerio';
+
+import type { Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
-import { load } from 'cheerio';
+import { getRouteLimit } from '@/utils/route-limit';
+
+import { loadArticle } from './article';
 import { SUB_NAME_PREFIX, SUB_URL } from './const';
-import loadArticle from './article';
 
 export const route: Route = {
     path: '/category/:category',
@@ -32,7 +35,7 @@ export const route: Route = {
 };
 
 async function handler(ctx) {
-    const limit = Number.parseInt(ctx.req.query('limit')) || 20;
+    const limit = getRouteLimit(ctx, 20);
     const category = ctx.req.param('category');
     const categoryUrl = `${SUB_URL}category/${category}/`;
 
@@ -47,7 +50,7 @@ async function handler(ctx) {
             itemRaw.map((e) => {
                 const item = $(e);
                 const link = item.find('h5.post-title a').attr('href');
-                return cache.tryGet(link, () => loadArticle(link));
+                return cache.tryGet(link!, () => loadArticle(link));
             })
         ),
     };

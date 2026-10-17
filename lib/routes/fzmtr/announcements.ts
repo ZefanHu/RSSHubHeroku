@@ -1,6 +1,7 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
 import { parseDate } from '@/utils/parse-date';
 
 export const route: Route = {
@@ -31,10 +32,10 @@ async function handler() {
     const list = $('span#resources li')
         .toArray()
         .map((item) => {
-            item = $(item);
-            const url = `http://${domain}` + item.find('a').attr('href');
-            const title = item.find('a').text();
-            const publishTime = parseDate(item.find('span').text());
+            const $item = $(item);
+            const url = `http://${domain}` + $item.find('a').attr('href');
+            const title = $item.find('a').text();
+            const publishTime = parseDate($item.find('span').text());
             return {
                 title,
                 link: url,
@@ -45,7 +46,7 @@ async function handler() {
 
     return {
         title: '福州地铁通知公告',
-        url: announcementsUrl,
+        link: announcementsUrl,
         description: '福州地铁通知公告',
         item: list.map((item) => ({
             title: item.title,
