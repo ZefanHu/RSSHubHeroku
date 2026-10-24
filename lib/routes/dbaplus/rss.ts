@@ -1,7 +1,9 @@
-import { Route } from '@/types';
-import { parseDate } from '@/utils/parse-date';
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+import { parseDate } from '@/utils/parse-date';
+import timezone from '@/utils/timezone';
 
 export const route: Route = {
     path: '/',
@@ -36,7 +38,7 @@ async function handler() {
                 title,
                 description,
                 link,
-                pubDate: parseDate(dateraw, 'YYYY年MM月DD日'),
+                pubDate: dateraw ? timezone(parseDate(dateraw, 'YYYY年MM月DD日'), 8) : undefined,
             };
         });
     return {

@@ -1,7 +1,8 @@
-import { Route } from '@/types';
+import { load } from 'cheerio';
+
+import type { Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
-import { load } from 'cheerio';
 import { parseDate } from '@/utils/parse-date';
 import timezone from '@/utils/timezone';
 
@@ -47,7 +48,11 @@ export const route: Route = {
 
 async function handler(ctx) {
     const category = ctx.req.param('category') ?? 'top-stories';
-    const suffix = map.get(category).suffix;
+    const selectedCategory = map.get(category);
+    if (!selectedCategory) {
+        throw new Error(`Unknown NL Times category: ${category}. Expected one of: ${map.keys().toArray().join(', ')}.`);
+    }
+    const suffix = selectedCategory.suffix;
 
     const rootUrl = 'https://www.nltimes.nl';
     const apiUrl = rootUrl + suffix;
@@ -86,7 +91,7 @@ async function handler(ctx) {
     const items = await Promise.all(
         list.map((item) => {
             const title = item.title;
-            const date = timezone(parseDate(item.date, 'DD MMMM YYYY - HH:mm'), +1); // Central European Time
+            const date = timezone(parseDate(item.date, 'DD MMMM YYYY - HH:mm'), 1); // Central European Time
             const link = rootUrl + item.link;
             const category = item.category;
 
@@ -109,10 +114,10 @@ async function handler(ctx) {
     );
 
     return {
-        title: map.get(category).title,
-        language: 'en',
+        title: map.get(category)!.title,
+        language: 'en' as const,
         link: apiUrl,
-        description: map.get(category).title,
+        description: map.get(category)!.title,
         item: items,
     };
 }

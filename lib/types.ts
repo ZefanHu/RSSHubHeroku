@@ -26,29 +26,31 @@ export type Category =
     | 'study'
     | 'journal'
     | 'finance'
+    | 'sport'
     | 'other';
 
 // rss
 export type DataItem = {
     title: string;
-    description?: string;
-    pubDate?: number | string | Date;
+    description?: string | null;
+    pubDate?: number | string | Date | null;
     link?: string;
-    category?: string[];
+    category?: string[] | string;
     author?:
         | string
-        | {
+        | Array<{
               name: string;
               url?: string;
               avatar?: string;
-          }[];
+          }>;
     doi?: string;
     guid?: string;
     id?: string;
     content?: {
-        html: string;
-        text: string;
+        html?: string | null;
+        text?: string | null;
     };
+    summary?: string;
     image?: string;
     banner?: string;
     updated?: number | string | Date;
@@ -60,29 +62,34 @@ export type DataItem = {
     itunes_duration?: number | string;
     itunes_item_image?: string;
     media?: Record<string, Record<string, string>>;
-    attachments?: {
+    upvotes?: number;
+    downvotes?: number;
+    comments?: number;
+    attachments?: Array<{
         url: string;
         mime_type: string;
         title?: string;
         size_in_bytes?: number;
         duration_in_seconds?: number;
-    }[];
-
+    }>;
+    // oxlint-disable-next-line anti-slop/no-unsafe-dictionary-type
     _extra?: Record<string, any> & {
-        links?: {
+        links?: Array<{
             url: string;
             type: string;
             content_html?: string;
-        }[];
+        }>;
     };
 };
 
 export type Data = {
     title: string;
-    description?: string;
+    description?: string | null;
     link?: string;
     item?: DataItem[];
     allowEmpty?: boolean;
+    /** Default publication-date sorting preference; the common sorted parameter takes precedence. */
+    sortItems?: boolean;
     image?: string;
     author?: string;
     language?: Language;
@@ -169,6 +176,7 @@ export type Language =
     | 'hi'
     | 'hr'
     | 'hu'
+    | 'id'
     | 'in'
     | 'is'
     | 'it'
@@ -177,6 +185,7 @@ export type Language =
     | 'ja'
     | 'ko'
     | 'mk'
+    | 'mul'
     | 'ne'
     | 'nl'
     | 'nl-be'
@@ -199,8 +208,11 @@ export type Language =
     | 'sv'
     | 'sv-fi'
     | 'sv-se'
+    | 'th'
     | 'tr'
     | 'uk'
+    | 'vi'
+    | 'zh'
     | 'zh-CN'
     | 'zh-HK'
     | 'zh-TW'
@@ -281,7 +293,7 @@ interface RouteItem {
     /**
      * The handler function of the route
      */
-    handler: (ctx: Context) => Promise<Data | null | Response> | Data | null | Response;
+    handler: (ctx: Context) => Promise<Data | null | Response | void> | Data | null | Response | void;
 
     /**
      * An example URL of the route
@@ -297,10 +309,10 @@ interface RouteItem {
         | {
               description: string;
               default?: string;
-              options?: {
+              options?: Array<{
                   value: string;
                   label: string;
-              }[];
+              }>;
           }
     >;
 
@@ -320,17 +332,17 @@ interface RouteItem {
     features?: {
         /** The extra configuration items required by the route */
         requireConfig?:
-            | {
+            | Array<{
                   /**  The environment variable name */
                   name: string;
                   /**  Whether the environment variable is optional */
                   optional?: boolean;
                   /**  The description of the environment variable */
                   description: string;
-              }[]
+              }>
             | false;
 
-        /** set to `true` if the feed uses puppeteer */
+        /** set to `true` if the feed uses browser automation */
         requirePuppeteer?: boolean;
 
         /** set to `true` if the target website has an anti-crawler mechanism */
@@ -364,9 +376,9 @@ interface RouteItem {
 }
 
 export interface Route extends RouteItem {
-    ja?: RouteItem;
-    zh?: RouteItem;
-    'zh-TW'?: RouteItem;
+    ja?: Partial<RouteItem>;
+    zh?: Partial<RouteItem>;
+    'zh-TW'?: Partial<RouteItem>;
 }
 
 // radar
@@ -393,7 +405,8 @@ export type RadarItem = {
      * Will use RouteItem.path if not specified
      * @see https://docs.rsshub.app/joinus/new-radar#target
      *
-     * Using `target` as a function is deprecated in RSSHub-Radar 2.0.19
+     * Using `target` as a function is deprecated in RSSHub-Radar 2.0.19,
+     * and the generated radar rules ignore it and use RouteItem.path instead
      * @see https://github.com/DIYgod/RSSHub-Radar/commit/5a97647f900bb2bca792787a322b2b1ca512e40b#diff-f84e3c1e16af314bc4ed7c706d7189844663cde9b5142463dc5c0db34c2e8d54L10
      * @see https://github.com/DIYgod/RSSHub-Radar/issues/692
      */
@@ -449,10 +462,10 @@ export interface APIRoute {
         {
             description: string;
             default?: string;
-            options?: {
+            options?: Array<{
                 value: string;
                 label: string;
-            }[];
+            }>;
         }
     >;
 

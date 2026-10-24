@@ -1,11 +1,12 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
+
 import utils from './utils';
 
 export const route: Route = {
     path: '/video_codes/:code/:filter?',
     categories: ['multimedia'],
     example: '/javdb/video_codes/SIVR',
-    parameters: { id: '番号前缀', filter: '过滤，见下表，默认为 `全部`' },
+    parameters: { code: '番号前缀', filter: '过滤，见下表，默认为 `全部`' },
     features: {
         requireConfig: [
             {

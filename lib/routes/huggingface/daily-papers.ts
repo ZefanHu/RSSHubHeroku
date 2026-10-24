@@ -1,7 +1,16 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
 import { parseDate } from '@/utils/parse-date';
+
+function getPublicationDate(value?: string) {
+    if (!value) {
+        return;
+    }
+    const date = parseDate(value);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+}
 
 export const route: Route = {
     path: '/daily-papers/:cycle?/:voteFliter?',
@@ -32,7 +41,7 @@ interface Paper {
     id: string;
     summary: string;
     upvotes: number;
-    authors: { name: string }[];
+    authors: Array<{ name: string }>;
 }
 
 interface DailyPaperItem {
@@ -65,7 +74,11 @@ async function handler(ctx) {
 
     const { body: response } = await got(url);
     const $ = load(response);
-    const papers = $('main > div[data-target="DailyPapers"]').data('props') as PapersData;
+    const props = $('div[data-target="DailyPapers"]').attr('data-props');
+    if (!props) {
+        throw new Error(`Daily papers data not found on ${url}`);
+    }
+    const papers: PapersData = JSON.parse(props);
 
     const items = papers.dailyPapers
         .filter((item) => item.paper.upvotes >= voteFliter)
@@ -73,7 +86,7 @@ async function handler(ctx) {
             title: item.title,
             link: `https://arxiv.org/abs/${item.paper.id}`,
             description: item.paper.summary.replaceAll('\n', ' '),
-            pubDate: parseDate(item.publishedAt),
+            pubDate: getPublicationDate(item.publishedAt),
             author: item.paper.authors.map((author) => author.name).join(', '),
             upvotes: item.paper.upvotes,
         }))

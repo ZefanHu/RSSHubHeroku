@@ -1,9 +1,12 @@
+import querystring from 'node:querystring';
+
 import { config } from '@/config';
 import ConfigNotFoundError from '@/errors/types/config-not-found';
 import InvalidParameterError from '@/errors/types/invalid-parameter';
-import { Data, Route, ViewType } from '@/types';
+import type { Data, Route } from '@/types';
+import { ViewType } from '@/types';
 import { fallback, queryToBoolean } from '@/utils/readable-social';
-import querystring from 'node:querystring';
+
 import utils from './utils';
 
 export const route: Route = {
@@ -41,7 +44,7 @@ Examples:
 
 async function handler(ctx): Promise<Data> {
     const username = ctx.req.param('username');
-    const [, pureUsername, site] = username.match(/@?(\w+)@(\w+\.\w+)/) || [];
+    const [, pureUsername, site] = username.match(/^@?(\w+)@((?:[a-z\d](?:[a-z\d-]*[a-z\d])?\.)+[a-z\d](?:[a-z\d-]*[a-z\d])?)$/i) || [];
     if (!pureUsername || !site) {
         throw new InvalidParameterError('Provide a valid Misskey username');
     }

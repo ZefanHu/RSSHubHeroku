@@ -1,8 +1,9 @@
-import { Route } from '@/types';
+import { load } from 'cheerio';
+import pMap from 'p-map';
 
+import type { DataItem, Route } from '@/types';
 import cache from '@/utils/cache';
 import ofetch from '@/utils/ofetch';
-import { load } from 'cheerio';
 
 export const route: Route = {
     path: '/',
@@ -26,28 +27,29 @@ async function handler() {
 
     const list = $('.view-what-s-new .field-content a')
         .toArray()
-        .map((element) => {
+        .map((element): DataItem => {
             const a = $(element);
             return {
                 title: a.text(),
-                link: new URL(a.attr('href'), baseUrl).href,
+                link: new URL(a.attr('href')!, baseUrl).href,
             };
         });
 
-    const items = await Promise.all(
-        list.map((item) =>
-            cache.tryGet(item.link, async () => {
-                const response = await ofetch(item.link);
+    const items = await pMap(
+        list,
+        async (item) => {
+            const detail = await cache.tryGet(`naturalism:article:v2:${item.link}`, async () => {
+                const response = await ofetch(item.link!);
                 const $ = load(response);
 
                 const content = $('#content');
                 content.find('h1').remove();
 
-                item.description = $('#content').html();
-
-                return item;
-            })
-        )
+                return { description: content.html() };
+            });
+            return { ...item, ...detail };
+        },
+        { concurrency: 3 }
     );
 
     return {
