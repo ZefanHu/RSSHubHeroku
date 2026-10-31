@@ -1,4 +1,6 @@
-import { type Route, ViewType } from '@/types';
+import type { Route } from '@/types';
+import { ViewType } from '@/types';
+
 import { handler as cfhHandler } from './cfh';
 import { handler as gubaHandler } from './guba';
 import { handler as trplHandler } from './trpl';
@@ -55,8 +57,6 @@ async function handler(ctx) {
     if (trplResult.status === 'fulfilled') {
         allItems.push(...trplResult.value.item);
     }
-
-    allItems.sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime());
 
     const nickname = allItems[0]?.author || '用户';
 

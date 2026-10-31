@@ -1,14 +1,16 @@
-import { Route } from '@/types';
+import { load } from 'cheerio';
+
+import type { Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
-import { load } from 'cheerio';
 import { parseDate } from '@/utils/parse-date';
 import timezone from '@/utils/timezone';
 
 async function fetch(address) {
     const res = await got(address);
     const $ = load(res.data);
-    return $('.tb-ct-info').html();
+    const content = $('.tb-ct-info tr').filter((_index, row) => $(row).find('.lbl_WJNR, .lbl_HFNR').length > 0);
+    return `<table>${content.toString()}</table>`;
 }
 
 export const route: Route = {

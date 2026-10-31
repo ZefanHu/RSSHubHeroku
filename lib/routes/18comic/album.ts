@@ -1,8 +1,9 @@
-import { Route } from '@/types';
-import { defaultDomain, getApiUrl, getRootUrl, processApiItems } from './utils';
-import { art } from '@/utils/render';
-import path from 'node:path';
+import type { DataItem, Route } from '@/types';
 import cache from '@/utils/cache';
+import { parseDate } from '@/utils/parse-date';
+
+import { renderDescription } from './templates/description';
+import { defaultDomain, getApiUrl, getRootUrl, processApiItems } from './utils';
 
 export const route: Route = {
     path: '/album/:id',
@@ -24,11 +25,11 @@ export const route: Route = {
         },
     ],
     name: '专辑',
-    maintainers: ['nczitzk'],
+    maintainers: ['nczitzk', 'pseudoyu'],
     handler,
     url: 'jmcomic.group/',
     description: `::: tip
-  专辑 id 不包括 URL 中标题的部分。
+专辑 id 不包括 URL 中标题的部分。
 :::`,
 };
 
@@ -52,11 +53,11 @@ async function handler(ctx) {
             title: apiResult.name,
             link: `${rootUrl}/photo/${id}`,
             guid: `${rootUrl}/photo/${id}`,
-            updated: new Date(addTime * 1000),
-            pubDate: new Date(addTime * 1000),
+            updated: parseDate(addTime, 'X'),
+            pubDate: parseDate(addTime, 'X'),
             category,
             author,
-            description: art(path.join(__dirname, 'templates/description.art'), {
+            description: renderDescription({
                 introduction: description,
                 // 不取图片，因为专辑的图片会被分割排序，所以只取封面图
                 images: [`https://cdn-msp3.${domain}/media/albums/${id}_3x4.jpg`],
@@ -70,16 +71,16 @@ async function handler(ctx) {
                 cache.tryGet(`18comic:album:${item.id}`, async () => {
                     const chapterApiUrl = `${getApiUrl()}/chapter?id=${item.id}`;
                     const chapterResult = await processApiItems(chapterApiUrl);
-                    const result = {};
+                    const result: DataItem = { title: '' };
                     const chapterNum = index + 1;
-                    result.title = `第${String(chapterNum)}話 ${item.name === '' ? `${String(chapterNum)}` : item.name}`;
+                    result.title = `第${chapterNum}話 ${item.name === '' ? chapterNum : item.name}`;
                     result.link = `${rootUrl}/photo/${item.id}`;
                     result.guid = `${rootUrl}/photo/${item.id}`;
-                    result.updated = new Date(chapterResult.addtime * 1000);
-                    result.pubDate = addTime;
+                    result.updated = parseDate(chapterResult.addtime, 'X');
+                    result.pubDate = parseDate(addTime, 'X');
                     result.category = category;
                     result.author = author;
-                    result.description = art(path.join(__dirname, 'templates/description.art'), {
+                    result.description = renderDescription({
                         introduction: description,
                         // 不取图片，因为专辑的图片会被分割排序，所以只取封面图
                         images: [`https://cdn-msp3.${domain}/media/albums/${item.id}_3x4.jpg`],

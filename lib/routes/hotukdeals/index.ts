@@ -1,6 +1,8 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import InvalidParameterError from '@/errors/types/invalid-parameter';
+import type { Route } from '@/types';
+import got from '@/utils/got';
 
 export const route: Route = {
     path: '/:type',
@@ -22,6 +24,9 @@ export const route: Route = {
 
 async function handler(ctx) {
     let type = ctx.req.param('type');
+    if (!['highlights', 'hot', 'new', 'discussed'].includes(type)) {
+        throw new InvalidParameterError('Invalid type: expected highlights, hot, new, or discussed.');
+    }
     if (type === 'highlights') {
         type = '';
     }
@@ -41,11 +46,11 @@ async function handler(ctx) {
         item: list
             .toArray()
             .map((item) => {
-                item = $(item);
+                const $item = $(item);
                 return {
-                    title: item.find('.cept-tt').text(),
-                    description: `${item.find('.thread-listImgCell').html()}<br>${item.find('.cept-vote-temp').html()}<br>${item.find('.overflow--fade').html()}<br>${item.find('.threadGrid-body .userHtml').html()}`,
-                    link: item.find('.cept-tt').attr('href'),
+                    title: $item.find('.cept-tt').text(),
+                    description: `${$item.find('.thread-listImgCell').html()}<br>${$item.find('.cept-vote-temp').html()}<br>${$item.find('.overflow--fade').html()}<br>${$item.find('.threadGrid-body .userHtml').html()}`,
+                    link: $item.find('.cept-tt').attr('href'),
                 };
             })
             .toReversed(),

@@ -1,4 +1,6 @@
-import { Data, Route, ViewType } from '@/types';
+import type { Data, Route } from '@/types';
+import { ViewType } from '@/types';
+
 import { fetchCollection } from './utils';
 
 export const route: Route = {
@@ -26,5 +28,5 @@ export const route: Route = {
 };
 
 async function handler(): Promise<Data> {
-    return await fetchCollection('reports', undefined, true);
+    return await fetchCollection('reports');
 }

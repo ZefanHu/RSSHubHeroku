@@ -1,10 +1,11 @@
-import { Route } from '@/types';
-import cache from '@/utils/cache';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
-import timezone from '@/utils/timezone';
+import pMap from 'p-map';
+
+import type { DataItem, Route } from '@/types';
+import cache from '@/utils/cache';
 import ofetch from '@/utils/ofetch';
-import { finishArticleItem } from '@/utils/wechat-mp';
+import { parseDate } from '@/utils/parse-date';
+import { fetchArticle } from '@/utils/wechat-mp';
 
 export const route: Route = {
     path: '/seiee/icisee/:cat',
@@ -37,26 +38,30 @@ async function handler(ctx) {
     const list = $('.djdt li')
         .toArray()
         .map((item) => {
-            item = $(item);
+            const $item = $(item);
 
+            const published = $item.find('.time').text().trim();
             return {
-                title: item.find('.tit').text().trim(),
-                link: item.find('a').attr('href'),
-                pubDate: timezone(parseDate(item.find('.time').text().trim())),
+                title: $item.find('.tit').text(),
+                link: $item.find('a').attr('href'),
+                pubDate: published ? parseDate(`${published} +0000`, 'MM/DD/YYYY ZZ') : undefined,
             };
         });
 
-    const items = await Promise.all(
-        list.map((item) =>
-            cache.tryGet(item.link, async () => {
-                const detailResponse = await ofetch.raw(item.link);
+    const items = await pMap(
+        list,
+        async (item) => {
+            const details = await cache.tryGet<Pick<DataItem, 'description' | 'pubDate' | 'author' | 'link'>>(`sjtu:icisee:details:v4:${item.link}`, async () => {
+                const detailResponse = await ofetch.raw(item.link!);
                 if (new URL(detailResponse.url).hostname !== 'mp.weixin.qq.com') {
-                    return { ...item, description: $(detailResponse._data).find('.xwxq').html() };
+                    return { description: $(detailResponse._data).find('.xwxq').html() };
                 }
-                item.link = detailResponse.url;
-                return await finishArticleItem(item);
-            })
-        )
+                const article = await fetchArticle(detailResponse.url);
+                return { link: detailResponse.url, description: article.description, author: article.author, pubDate: article.pubDate };
+            });
+            return { ...item, ...details, pubDate: details.pubDate ?? item.pubDate };
+        },
+        { concurrency: 3 }
     );
 
     return {
