@@ -1,6 +1,8 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+import { parseDate } from '@/utils/parse-date';
 
 export const route: Route = {
     path: '/',
@@ -33,7 +35,7 @@ async function handler() {
             const pubDate = $item.find('pubDate').text();
             return {
                 link,
-                pubDate, // no need to normalize because it's from a valid RSS feed
+                pubDate: pubDate ? parseDate(pubDate) : undefined,
                 title,
                 description,
             };

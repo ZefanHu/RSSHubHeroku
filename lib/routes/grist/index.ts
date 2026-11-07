@@ -1,4 +1,5 @@
-import { Route } from '@/types';
+import type { Data, Route } from '@/types';
+
 import { getData, getList } from './utils';
 
 export const route: Route = {
@@ -17,7 +18,7 @@ export const route: Route = {
     url: 'grist.org/articles/',
 };
 
-async function handler() {
+async function handler(): Promise<Data> {
     const baseUrl = 'https://grist.org';
     const route = '/wp-json/wp/v2/posts?_embed';
 
@@ -25,7 +26,7 @@ async function handler() {
     const items = await getList(data);
 
     return {
-        title: 'Gist Latest Articles',
+        title: 'Grist Latest Articles',
         link: `${baseUrl}/articles`,
         item: items,
         description: 'Latest Articles on grist.org',

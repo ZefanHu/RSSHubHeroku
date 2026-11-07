@@ -1,8 +1,9 @@
-import { Route, ViewType } from '@/types';
-import ofetch from '@/utils/ofetch';
 import { config } from '@/config';
 import ConfigNotFoundError from '@/errors/types/config-not-found';
+import type { Route } from '@/types';
+import { ViewType } from '@/types';
 import cache from '@/utils/cache';
+import ofetch from '@/utils/ofetch';
 
 export const route: Route = {
     path: '/stickerpack/:name',
@@ -11,7 +12,13 @@ export const route: Route = {
     example: '/telegram/stickerpack/DIYgod',
     parameters: { name: 'Sticker Pack name, available in the sharing URL' },
     features: {
-        requireConfig: false,
+        requireConfig: [
+            {
+                name: 'TELEGRAM_TOKEN',
+                optional: false,
+                description: 'Telegram Bot API token',
+            },
+        ],
         requirePuppeteer: false,
         antiCrawler: false,
         supportBT: false,

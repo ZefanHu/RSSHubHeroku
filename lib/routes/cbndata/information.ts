@@ -1,39 +1,50 @@
-import { type Data, type DataItem, type Route, ViewType } from '@/types';
+import type { CheerioAPI } from 'cheerio';
+import { load } from 'cheerio';
+import type { Context } from 'hono';
 
-import { art } from '@/utils/render';
+import type { Data, DataItem, Language, Route } from '@/types';
+import { ViewType } from '@/types';
 import cache from '@/utils/cache';
 import ofetch from '@/utils/ofetch';
 import { parseDate } from '@/utils/parse-date';
+import { getRouteLimit } from '@/utils/route-limit';
 
-import { type CheerioAPI, load } from 'cheerio';
-import { type Context } from 'hono';
-import path from 'node:path';
+import { renderDescription } from './templates/description';
+
+interface CbndataArticleDetail {
+    id?: number | string;
+    title: string;
+    content?: string;
+    date: number | string;
+    tags?: Array<{ name: string }>;
+    author: string;
+    thumbnail_url?: string;
+}
 
 export const handler = async (ctx: Context): Promise<Data> => {
     const { id = 'all' } = ctx.req.param();
-    const limit: number = Number.parseInt(ctx.req.query('limit') ?? '50', 10);
+    const limit = getRouteLimit(ctx, 50);
 
-    const baseUrl: string = 'https://www.cbndata.com';
+    const baseUrl = 'https://www.cbndata.com';
     const targetUrl: string = new URL(`information?tag_id=${id}`, baseUrl).href;
     const apiUrl: string = new URL('api/v3/informations', baseUrl).href;
 
     const targetResponse = await ofetch(targetUrl);
     const $: CheerioAPI = load(targetResponse);
-    const language = $('html').attr('lang') ?? 'zh';
+    const language = ($('html').attr('lang') ?? 'zh') as Language;
 
     const response = await ofetch(apiUrl, {
         query: {
             page: 1,
             per_page: limit,
+            tag_id: id === 'all' ? undefined : id,
         },
     });
 
-    let items: DataItem[] = [];
-
-    items = response.data.slice(0, limit).map((item): DataItem => {
+    let items: DataItem[] = response.data.slice(0, limit).map((item): DataItem => {
         const title: string = item.title;
         const image: string | undefined = item.image;
-        const description: string | undefined = art(path.join(__dirname, 'templates/description.art'), {
+        const description: string | undefined = renderDescription({
             images: image
                 ? [
                       {
@@ -46,7 +57,7 @@ export const handler = async (ctx: Context): Promise<Data> => {
         const pubDate: number | string = item.date;
         const linkUrl: string | undefined = item.id ? `information/${item.id}` : undefined;
         const categories: string[] = item.tags;
-        const guid: string = `cbndata-information-${item.id}`;
+        const guid = `cbndata-information-${item.id}`;
         const updated: number | string = pubDate;
 
         const processedItem: DataItem = {
@@ -77,7 +88,7 @@ export const handler = async (ctx: Context): Promise<Data> => {
             }
 
             return cache.tryGet(item.link, async (): Promise<DataItem> => {
-                const detailResponse = await ofetch(item.link);
+                const detailResponse = await ofetch(item.link!);
 
                 const dataStr: string | undefined = detailResponse.match(/<script>window\.__INITIAL_STATE__=(.*?);<\/script>/)?.[1];
 
@@ -85,7 +96,7 @@ export const handler = async (ctx: Context): Promise<Data> => {
                     return item;
                 }
 
-                const data = JSON.parse(dataStr)?.data;
+                const data: CbndataArticleDetail | undefined = JSON.parse(dataStr)?.data;
 
                 if (!data) {
                     return item;
@@ -94,12 +105,12 @@ export const handler = async (ctx: Context): Promise<Data> => {
                 const title: string = data.title;
                 const description: string | undefined =
                     item.description +
-                    art(path.join(__dirname, 'templates/description.art'), {
+                    renderDescription({
                         description: data.content,
                     });
                 const pubDate: number | string = data.date;
                 const linkUrl: string | undefined = data.id ? `information/${data.id}` : undefined;
-                const categories: string[] = [...new Set(((data.tags?.map((c) => c.name) ?? []) as string[]).filter(Boolean))];
+                const categories: string[] = [...new Set((data.tags?.map((c) => c.name) ?? []).filter(Boolean))];
                 const authors: DataItem['author'] = [
                     {
                         name: data.author,
@@ -107,7 +118,7 @@ export const handler = async (ctx: Context): Promise<Data> => {
                         avatar: undefined,
                     },
                 ];
-                const guid: string = `cbndata-information-${data.id}`;
+                const guid = `cbndata-information-${data.id}`;
                 const image: string | undefined = data.thumbnail_url;
                 const updated: number | string = pubDate;
 
@@ -139,7 +150,7 @@ export const handler = async (ctx: Context): Promise<Data> => {
     );
 
     const tag: string = response.home_tags.find((t: { id: number; name: string }) => String(t.id) === id)?.name ?? '';
-    const title: string = `${tag ? `${tag}-` : ''}${$('title').text().trim()}`;
+    const title = `${tag ? `${tag}-` : ''}${$('title').text().trim()}`;
 
     return {
         title,
@@ -198,8 +209,7 @@ export const route: Route = {
 | [美妆个护](https://www.cbndata.com/information?tag_id=1)    | [1](https://rsshub.app/cbndata/information/1)       |
 | [服饰鞋包](https://www.cbndata.com/information?tag_id=2559) | [2559](https://rsshub.app/cbndata/information/2559) |
 | [宠物](https://www.cbndata.com/information?tag_id=2419)     | [2419](https://rsshub.app/cbndata/information/2419) |
-| [营销](https://www.cbndata.com/information?tag_id=2484)     | [2484](https://rsshub.app/cbndata/information/2484) |
-`,
+| [营销](https://www.cbndata.com/information?tag_id=2484)     | [2484](https://rsshub.app/cbndata/information/2484) |`,
     categories: ['new-media'],
     features: {
         requireConfig: false,
@@ -211,15 +221,6 @@ export const route: Route = {
         supportScihub: false,
     },
     radar: [
-        {
-            source: ['www.cbndata.com/information'],
-            target: (params, url) => {
-                const urlObj: URL = new URL(url);
-                const id: string | undefined = urlObj.searchParams.get('tag_id') ?? undefined;
-
-                return `/information${id ? `/${id}` : ''}`;
-            },
-        },
         {
             title: '全部',
             source: ['www.cbndata.com/information'],

@@ -1,6 +1,7 @@
-import { Data, DataItem, Route } from '@/types';
 import { config } from '@/config';
 import ConfigNotFoundError from '@/errors/types/config-not-found';
+import type { Data, Route } from '@/types';
+
 import { getFollowingsItems } from './utils';
 
 export const route: Route = {
@@ -24,7 +25,7 @@ export const route: Route = {
         nsfw: true,
     },
     name: 'Following Works',
-    maintainers: ['SnowAgar25'],
+    maintainers: ['Tsuyumi25'],
     handler,
     radar: [
         {
@@ -48,6 +49,6 @@ async function handler(ctx): Promise<Data> {
     return {
         title: `Skeb - ${username} - フォロー中のクリエイターの新着作品`,
         link: `https://skeb.jp/${username}`,
-        item: items as DataItem[],
+        item: items,
     };
 }

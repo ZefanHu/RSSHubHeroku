@@ -1,6 +1,5 @@
-import { DataItem, Route } from '@/types';
+import type { DataItem, Route } from '@/types';
 import ofetch from '@/utils/ofetch';
-import * as url from 'node:url';
 
 const host = 'https://github.com';
 
@@ -38,14 +37,15 @@ async function handler(ctx) {
     }
 
     const suffix = 'search?o='.concat(order, '&q=', encodeURIComponent(query), '&s=', sort, '&type=Repositories');
-    const link = url.resolve(host, suffix);
+    const link = new URL(suffix, host).href;
     const response = await ofetch(link, {
         headers: {
             accept: 'application/json',
         },
     });
 
-    const out = response.payload.results.map((item) => {
+    const payload = response.payload.blackbirdSearchRoute ?? response.payload;
+    const out = payload.results.map((item): DataItem => {
         const {
             repo: { repository },
             hl_trunc_description,
@@ -56,11 +56,10 @@ async function handler(ctx) {
             author: repository.owner_login,
             link: host.concat(`/${repository.owner_login}/${repository.name}`),
             description: hl_trunc_description,
-        } as DataItem;
+        };
     });
 
     return {
-        allowEmpty: true,
         title: `${query}的搜索结果`,
         link,
         item: out,

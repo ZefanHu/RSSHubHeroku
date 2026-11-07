@@ -1,4 +1,5 @@
-import { Route, Data } from '@/types';
+import type { Data, Route } from '@/types';
+
 import { getBySlug, getPostsBy } from './utils';
 
 export const route: Route = {
@@ -16,7 +17,7 @@ export const route: Route = {
         nsfw: true,
     },
     name: 'Tag',
-    maintainers: ['SnowAgar25'],
+    maintainers: ['Tsuyumi25'],
     handler,
     radar: [
         {
@@ -36,7 +37,7 @@ async function handler(ctx): Promise<Data> {
 
     return {
         title: `Tag: ${name} - chikubi.jp`,
-        link: `${baseUrl}/category/${keyword}`,
+        link: `${baseUrl}/tag/${keyword}`,
         item: items,
     };
 }

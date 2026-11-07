@@ -1,12 +1,14 @@
 interface KemonoPost {
     id: string;
     title: string;
-    content: string;
+    content?: string;
+    substring?: string;
     published: string;
     service: string;
     user: string;
     file?: any;
     attachments?: any[];
+    embed?: any;
 }
 
 interface KemonoFile {
@@ -19,6 +21,7 @@ interface DiscordMessage {
     id: string;
     content: string;
     published: string;
+    embeds?: any[];
     author: {
         username: string;
         discriminator: string;
@@ -28,4 +31,4 @@ interface DiscordMessage {
     attachments?: any[];
 }
 
-export type { KemonoPost, KemonoFile, DiscordMessage };
+export type { DiscordMessage, KemonoFile, KemonoPost };

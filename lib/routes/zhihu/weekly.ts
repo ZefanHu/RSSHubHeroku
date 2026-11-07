@@ -1,6 +1,7 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
 
 const host = 'https://www.zhihu.com';
 
@@ -22,7 +23,7 @@ export const route: Route = {
             source: ['www.zhihu.com/pub/weekly'],
         },
     ],
-    name: '知乎书店 - 知乎周刊',
+    name: '书店 - 周刊',
     maintainers: ['LogicJake'],
     handler,
     url: 'www.zhihu.com/pub/weekly',
@@ -40,9 +41,10 @@ async function handler() {
         .map((element) => {
             const info = {
                 title: $(element).find('span.PubBookListItem-title').text(),
-                link: new URL($(element).find('a.PubBookListItem-buttonWrapper').attr('href'), host).href,
+                link: new URL($(element).find('a.PubBookListItem-buttonWrapper').attr('href')!, host).href,
                 description: $(element).find('div.PubBookListItem-description').text(),
                 author: $(element).find('span.PubBookListItem-author').text(),
+                image: $(element).find('.PubBookListItem-image img').attr('src'),
             };
             return info;
         });

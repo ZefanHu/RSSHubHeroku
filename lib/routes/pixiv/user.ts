@@ -1,11 +1,12 @@
-import { Route, ViewType } from '@/types';
-import cache from '@/utils/cache';
-import { getToken } from './token';
-import getIllusts from './api/get-illusts';
 import { config } from '@/config';
-import pixivUtils from './utils';
-import { parseDate } from '@/utils/parse-date';
 import ConfigNotFoundError from '@/errors/types/config-not-found';
+import type { Route } from '@/types';
+import { ViewType } from '@/types';
+import { parseDate } from '@/utils/parse-date';
+
+import getIllusts from './api/get-illusts';
+import { getToken } from './token';
+import pixivUtils from './utils';
 
 export const route: Route = {
     path: '/user/:id',
@@ -14,7 +15,12 @@ export const route: Route = {
     example: '/pixiv/user/15288095',
     parameters: { id: "user id, available in user's homepage URL" },
     features: {
-        requireConfig: false,
+        requireConfig: [
+            {
+                name: 'PIXIV_REFRESHTOKEN',
+                description: 'Pixiv refresh token required for accessing the app API.',
+            },
+        ],
         requirePuppeteer: false,
         antiCrawler: false,
         supportBT: false,
@@ -38,7 +44,7 @@ async function handler(ctx) {
     }
 
     const id = ctx.req.param('id');
-    const token = await getToken(cache.tryGet);
+    const token = await getToken();
     if (!token) {
         throw new ConfigNotFoundError('pixiv not login');
     }
