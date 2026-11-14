@@ -1,5 +1,6 @@
-import { Route } from '@/types';
-import utils from './utils';
+import type { Route } from '@/types';
+
+import { utils } from './utils';
 
 export const route: Route = {
     path: '/:category?',
@@ -17,7 +18,11 @@ export const route: Route = {
     radar: [
         {
             source: ['sobooks.net/:category'],
-            target: '/:category',
+            target: '/:category?',
+        },
+        {
+            source: ['sobooks.cc/:category'],
+            target: '/:category?',
         },
     ],
     name: '首页',

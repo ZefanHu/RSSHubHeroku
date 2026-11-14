@@ -1,8 +1,9 @@
-import { Route } from '@/types';
-import { parseDate } from '@/utils/parse-date';
-import ofetch from '@/utils/ofetch';
-import md5 from '@/utils/md5';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import md5 from '@/utils/md5';
+import ofetch from '@/utils/ofetch';
+import { parseDate } from '@/utils/parse-date';
 
 export const route: Route = {
     categories: ['design'],
@@ -24,7 +25,7 @@ async function handler() {
         .toArray()
         .flatMap((item) => {
             const table = $(item);
-            const date = table.find('.date').first().text();
+            const date = table.find('.date').text();
 
             return table
                 .find('.topic-item')
@@ -44,7 +45,9 @@ async function handler() {
                         title,
                     };
                 });
-        });
+        })
+        // The page lists some updates twice, such as the June 2023 Privacy entry
+        .filter((item, index, items) => items.findIndex((candidate) => candidate.guid === item.guid) === index);
 
     return {
         item: items,

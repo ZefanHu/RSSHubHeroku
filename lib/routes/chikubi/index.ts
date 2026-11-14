@@ -1,4 +1,5 @@
-import { Route, Data } from '@/types';
+import type { Data, Route } from '@/types';
+
 import { getPosts } from './utils';
 
 export const route: Route = {
@@ -15,7 +16,7 @@ export const route: Route = {
         nsfw: true,
     },
     name: '最新記事',
-    maintainers: ['SnowAgar25'],
+    maintainers: ['Tsuyumi25'],
     handler,
     radar: [
         {

@@ -1,8 +1,11 @@
-import { Route } from '@/types';
-import ofetch from '@/utils/ofetch';
-import cache from '@/utils/cache';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import cache from '@/utils/cache';
+import ofetch from '@/utils/ofetch';
+
 import { parseItem } from './utils';
+
 const rootUrl = 'https://www.coindesk.com';
 
 export const route: Route = {
@@ -35,7 +38,7 @@ async function handler() {
     const response = await ofetch(`${rootUrl}/${channel}`);
     const $ = load(response);
 
-    const list = $('div h2')
+    const list = $('a.content-card-title h2')
         .toArray()
         .map((item) => {
             const $item = $(item);

@@ -1,4 +1,5 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
+
 import util from './utils';
 
 export const route: Route = {
@@ -16,7 +17,7 @@ export const route: Route = {
     },
     radar: [
         {
-            source: ['index.nua.edu.cn/:type/list.htm'],
+            source: ['www.nua.edu.cn/:type/list.htm'],
         },
     ],
     name: 'Official Information',

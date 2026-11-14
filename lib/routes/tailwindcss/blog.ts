@@ -1,9 +1,12 @@
-import { Route } from '@/types';
-import { Context } from 'hono';
+import type { Context } from 'hono';
+
+import type { Route } from '@/types';
+import { getRouteLimit } from '@/utils/route-limit';
+
 import { fetchFeed } from './utils';
 
 export const handler = (ctx: Context) => {
-    const limit = Number.parseInt(ctx.req.query('limit') || '10');
+    const limit = getRouteLimit(ctx, 10);
 
     return fetchFeed(limit);
 };
