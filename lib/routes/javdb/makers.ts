@@ -1,4 +1,5 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
+
 import utils from './utils';
 
 export const route: Route = {
@@ -35,14 +36,14 @@ export const route: Route = {
 | ---- | -------- | -------- | -------- | ----- | ------- |
 |      | playable | single   | download | cnsub | preview |
 
-  所有片商编号参见 [片商庫](https://javdb.com/makers)`,
+所有片商编号参见 [片商庫](https://javdb.com/makers)`,
 };
 
 async function handler(ctx) {
     const id = ctx.req.param('id');
     const filter = ctx.req.param('filter') ?? '';
 
-    const currentUrl = `/makers/${id}${filter ? `?f=${filter}` : ''}`;
+    const currentUrl = `/makers/${encodeURIComponent(id)}${filter ? `?f=${filter}` : ''}`;
 
     const filters = {
         '': '',

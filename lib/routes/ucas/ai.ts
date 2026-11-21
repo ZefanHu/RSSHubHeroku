@@ -1,7 +1,8 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+import { parseDateStrict } from '@/utils/time';
 
 export const route: Route = {
     path: '/ai',
@@ -35,18 +36,19 @@ async function handler() {
     const list = $('.b-list li');
 
     return {
-        title: '中科院人工智能所',
+        title: '中国科学院大学人工智能学院',
         link,
-        description: '中科院人工智能通知公告',
+        description: '中国科学院大学人工智能学院通知公告',
         item:
             list &&
             list.toArray().map((item) => {
-                item = $(item);
-                const a = item.find('a');
+                const $item = $(item);
+                const a = $item.find('a');
+                const pubDate = parseDateStrict($item.find('.m-date').text().trim(), 'YYYY-MM-DD', 8);
                 return {
                     title: a.text(),
                     link: `${baseUrl}${a.attr('href')}`,
-                    pubDate: parseDate(item.find('.m-date').text(), 'YYYY-MM-DD'),
+                    pubDate,
                 };
             }),
     };

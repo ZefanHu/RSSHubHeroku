@@ -1,7 +1,9 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+import { getRouteLimit } from '@/utils/route-limit';
+import { parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/blog/:category?',
@@ -64,7 +66,7 @@ async function handler(ctx) {
     const { data } = await got(`${rootUrl}/wp-json/wp/v2/posts`, {
         searchParams: {
             categories: category ? categoryMap[category].id : undefined,
-            per_page: ctx.req.query('limit') ? Number.parseInt(ctx.req.query('limit')) : 100,
+            per_page: getRouteLimit(ctx, 100),
         },
     });
 

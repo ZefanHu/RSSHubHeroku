@@ -1,7 +1,8 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+import { parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/news',
@@ -27,6 +28,13 @@ export const route: Route = {
     url: 'wanqu.co/',
 };
 
+function parseSourceTime(value?: string | number | null) {
+    if ((typeof value !== 'number' && typeof value !== 'string') || (typeof value === 'string' && !value.trim())) {
+        return;
+    }
+    return parseDate(value);
+}
+
 async function handler() {
     const rootUrl = 'https://www.wanqu.co';
     const currentUrl = rootUrl;
@@ -39,9 +47,8 @@ async function handler() {
         .toArray()
         .map((item) => ({
             title: $(item).find('a').text(),
-            description: $(item).find('a').text(),
             link: $(item).find('a').attr('href'),
-            pubDate: parseDate($(item).find('i.text-helper-color.mr-4').text().trim()),
+            pubDate: parseSourceTime($(item).find('i.text-helper-color.mr-4').text().trim()),
         }));
 
     return {

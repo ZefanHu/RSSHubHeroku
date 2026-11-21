@@ -1,5 +1,7 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
 import got from '@/utils/got';
+import { parseDate } from '@/utils/time';
+
 import utils from './utils';
 
 export const route: Route = {
@@ -26,7 +28,7 @@ async function handler(ctx) {
     const embed = !ctx.req.param('embed');
     const response = await got({
         method: 'get',
-        url: `https://api.bilibili.com/x/web-interface/popular`,
+        url: 'https://api.bilibili.com/x/web-interface/popular',
         headers: {
             Referer: 'https://www.bilibili.com/',
         },
@@ -34,15 +36,15 @@ async function handler(ctx) {
     const list = response.data.data.list;
 
     return {
-        title: `bilibili 综合热门`,
+        title: 'bilibili 综合热门',
         link: 'https://www.bilibili.com',
-        description: `bilibili 综合热门`,
+        description: 'bilibili 综合热门',
         item:
             list &&
             list.map((item) => ({
                 title: item.title,
                 description: utils.renderUGCDescription(embed, item.pic, item.desc, item.aid, undefined, item.bvid),
-                pubDate: new Date(item.pubdate * 1000).toUTCString(),
+                pubDate: parseDate(item.pubdate * 1000),
                 link: item.pubdate > utils.bvidTime && item.bvid ? `https://www.bilibili.com/video/${item.bvid}` : `https://www.bilibili.com/video/av${item.aid}`,
                 author: item.owner.name,
             })),

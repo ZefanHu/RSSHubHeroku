@@ -1,9 +1,11 @@
-import { DataItem, Route } from '@/types';
+import { load } from 'cheerio';
+import pMap from 'p-map';
+
+import type { DataItem, Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
-import { load } from 'cheerio';
+
 import { rootUrl } from './utils';
-import pMap from 'p-map';
 
 export const route: Route = {
     path: '/update',
@@ -20,13 +22,13 @@ export const route: Route = {
     },
     radar: [
         {
-            source: ['agemys.org/update', 'agemys.org/'],
+            source: ['www.agedm.io/update', 'www.agedm.io/'],
         },
     ],
     name: '最近更新',
     maintainers: ['nczitzk'],
     handler,
-    url: 'agemys.org/update',
+    url: 'www.agedm.io/update',
 };
 
 async function handler() {
@@ -37,28 +39,30 @@ async function handler() {
 
     const list = $('.video_item')
         .toArray()
-        .map((item) => {
-            item = $(item);
-            const link = item.find('a').attr('href').replace('http://', 'https://');
+        .map((item): DataItem => {
+            const $item = $(item);
+            const link = $item.find('a').attr('href')!.replace('http://', 'https://');
             return {
-                title: item.text(),
+                title: $item.text(),
                 link,
-                guid: `${link}#${item.find('.video_item--info').text()}`,
+                guid: `${link}#${$item.find('.video_item--info').text()}`,
             };
         });
 
     const items: DataItem[] = await pMap(
         list,
         (item) =>
-            cache.tryGet(item.link, async () => {
+            cache.tryGet(item.link!, async () => {
                 const detailResponse = await got(item.link);
                 const content = load(detailResponse.data);
 
                 content('img').each((_, ele) => {
-                    if (ele.attribs['data-original']) {
-                        ele.attribs.src = ele.attribs['data-original'];
-                        delete ele.attribs['data-original'];
+                    if (!ele.attribs['data-original']) {
+                        return;
                     }
+
+                    ele.attribs.src = ele.attribs['data-original'];
+                    delete ele.attribs['data-original'];
                 });
                 content('.video_detail_collect').remove();
 

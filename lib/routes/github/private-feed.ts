@@ -1,6 +1,8 @@
-import { Route, ViewType } from '@/types';
-import got from '@/utils/got';
 import { config } from '@/config';
+import type { Route } from '@/types';
+import { ViewType } from '@/types';
+import got from '@/utils/got';
+
 import { filterEvents } from './eventapi';
 
 export const route: Route = {
@@ -103,7 +105,7 @@ async function handler(ctx) {
 
     const response = await got({
         method: 'get',
-        url: `https://api.github.com/users/${user}/received_events`,
+        url: `https://api.github.com/users/${encodeURIComponent(user)}/received_events`,
         headers,
         searchParams: {
             per_page: 100,

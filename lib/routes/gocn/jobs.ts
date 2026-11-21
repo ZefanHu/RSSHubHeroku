@@ -1,6 +1,7 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
 import got from '@/utils/got';
-import { parseDate } from '@/utils/parse-date';
+import { parseDate } from '@/utils/time';
+
 import { renderHTML } from './utils';
 
 export const route: Route = {
@@ -45,9 +46,9 @@ async function handler() {
     }));
 
     return {
-        title: `GoCN社区-招聘`,
+        title: 'GoCN社区-招聘',
         link: base_url,
-        description: `获取GoCN站点招聘`,
+        description: '获取GoCN站点招聘',
         item: items,
     };
 }

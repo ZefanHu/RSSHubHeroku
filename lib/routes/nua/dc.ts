@@ -1,6 +1,7 @@
-import { Route } from '@/types';
-import util from './utils';
 import InvalidParameterError from '@/errors/types/invalid-parameter';
+import type { Route } from '@/types';
+
+import util from './utils';
 
 export const route: Route = {
     path: '/dc/:type',
@@ -17,7 +18,8 @@ export const route: Route = {
     },
     radar: [
         {
-            source: ['dc.nua.edu.cn/:type/list.htm'],
+            source: ['dc.nua.edu.cn/'],
+            target: '/dc/news',
         },
     ],
     name: 'School of Design',

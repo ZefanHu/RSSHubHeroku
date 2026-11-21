@@ -1,27 +1,30 @@
-import { type Data, type DataItem, type Route, ViewType } from '@/types';
+import type { CheerioAPI } from 'cheerio';
+import { load } from 'cheerio';
+import type { Context } from 'hono';
+import { getMimeType } from 'hono/utils/mime';
 
+import type { Data, DataItem, Language, Route } from '@/types';
+import { ViewType } from '@/types';
 import ofetch from '@/utils/ofetch';
-
-import { type CheerioAPI, load } from 'cheerio';
-import { type Context } from 'hono';
+import { getRouteLimit } from '@/utils/route-limit';
 
 export const handler = async (ctx: Context): Promise<Data> => {
-    const limit: number = Number.parseInt(ctx.req.query('limit') ?? '30', 10);
+    const limit = getRouteLimit(ctx, 30);
 
-    const baseUrl: string = 'https://www.azul.com';
-    const apiBaseUrl: string = 'https://api.azul.com';
+    const baseUrl = 'https://www.azul.com';
+    const apiBaseUrl = 'https://api.azul.com';
     const targetUrl: string = new URL('downloads', baseUrl).href;
     const apiUrl: string = new URL('metadata/v1/zulu/packages', apiBaseUrl).href;
 
     const targetResponse = await ofetch(targetUrl);
     const $: CheerioAPI = load(targetResponse);
-    const language = $('html').attr('lang') ?? 'en';
+    const language = ($('html').attr('lang') ?? 'en') as Language;
 
     const response = await ofetch(apiUrl, {
         query: {
             availability_types: 'ca',
             release_status: 'both',
-            page_size: 1000,
+            page_size: Number.isFinite(limit) && limit > 0 ? Math.min(Math.ceil(limit), 1000) : 1000,
             include_fields: 'java_package_features, release_status, support_term, os, arch, hw_bitness, abi, java_package_type, javafx_bundled, sha256_hash, cpu_gen, size, archive_type, certifications, lib_c_type, crac_supported',
             page: 1,
             azul_com: true,
@@ -29,13 +32,13 @@ export const handler = async (ctx: Context): Promise<Data> => {
     });
 
     const items: DataItem[] = response.slice(0, limit).map((item): DataItem => {
-        const javaVersion: string = `${item.java_version.join('.')}+${item.openjdk_build_number}`;
+        const javaVersion = `${item.java_version.join('.')}+${item.openjdk_build_number}`;
         const distroVersion: string = item.distro_version.join('.');
 
-        const title: string = `[${javaVersion}] (${distroVersion}) ${item.name}`;
+        const title = `[${javaVersion}] (${distroVersion}) ${item.name}`;
         const linkUrl: string | undefined = item.download_url;
         const categories: string[] = [item.os, item.arch, item.java_package_type, item.archive_type, item.abi, ...(item.javafx_bundled ? ['javafx'] : []), ...(item.crac_supported ? ['crac'] : [])];
-        const guid: string = `azul-${item.name}`;
+        const guid = `azul-${item.name}`;
 
         let processedItem: DataItem = {
             title,
@@ -57,6 +60,7 @@ export const handler = async (ctx: Context): Promise<Data> => {
                 enclosure_url: enclosureUrl,
                 enclosure_title: enclosureTitle || title,
                 enclosure_length: enclosureLength,
+                enclosure_type: getMimeType(new URL(enclosureUrl).pathname)?.split(';', 1)[0] ?? 'application/octet-stream',
             };
         }
 

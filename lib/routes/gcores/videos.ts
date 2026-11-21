@@ -1,11 +1,12 @@
-import { type Data, type Route, ViewType } from '@/types';
+import type { Context } from 'hono';
 
-import { type Context } from 'hono';
+import type { Data, Route } from '@/types';
+import { ViewType } from '@/types';
 
 import { baseUrl, processItems } from './util';
 
 export const handler = async (ctx: Context): Promise<Data> => {
-    const limit: number = Number.parseInt(ctx.req.query('limit') ?? '30', 10);
+    const limit = Number(ctx.req.query('limit') ?? '30');
 
     const targetUrl: string = new URL('videos', baseUrl).href;
     const apiUrl: string = new URL('gapi/v1/videos', baseUrl).href;
@@ -41,8 +42,12 @@ export const route: Route = {
     },
     radar: [
         {
+            source: ['www.gcores.com/'],
+            target: '/videos',
+        },
+        {
             source: ['www.gcores.com/videos'],
-            target: '/gcores/videos',
+            target: '/videos',
         },
     ],
     view: ViewType.Videos,

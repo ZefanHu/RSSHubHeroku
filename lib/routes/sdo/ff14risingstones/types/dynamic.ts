@@ -1,6 +1,6 @@
 import type { DynamicSource } from '../constant';
 import type { DateTimeFormat, UserPost } from './other';
-import type { DutiesParty, NoviceNetworkParty, FreeCompanyParty, OtherParty, RolePlayParty } from './party';
+import type { DutiesParty, FreeCompanyParty, NoviceNetworkParty, OtherParty, RolePlayParty } from './party';
 
 interface BaseUserDynamic {
     character_name: string;
@@ -13,36 +13,36 @@ interface BaseUserDynamic {
     mask_content: string;
 }
 
-export interface GeneralDynamic extends BaseUserDynamic {
+interface GeneralDynamic extends BaseUserDynamic {
     from: DynamicSource.General;
 }
 
-export interface PostDynamic extends BaseUserDynamic {
+interface PostDynamic extends BaseUserDynamic {
     from: DynamicSource.Post | DynamicSource.Strat;
     from_info?: UserPost;
 }
 
-export interface NoviceNetworkRecruitDynamic extends BaseUserDynamic {
+interface NoviceNetworkRecruitDynamic extends BaseUserDynamic {
     from: DynamicSource.NoviceNetwork;
     from_info?: Omit<NoviceNetworkParty, 'styleInfo' | 'weekday_time' | 'weekend_time'>;
 }
 
-export interface DutiesRecruitDynamic extends BaseUserDynamic {
+interface DutiesRecruitDynamic extends BaseUserDynamic {
     from: DynamicSource.Duty;
     from_info?: DutiesParty;
 }
 
-export interface FreeCompanyRecruitDynamic extends BaseUserDynamic {
+interface FreeCompanyRecruitDynamic extends BaseUserDynamic {
     from: DynamicSource.FreeCompany;
     from_info?: FreeCompanyParty;
 }
 
-export interface RolePlayRecruitDynamic extends BaseUserDynamic {
+interface RolePlayRecruitDynamic extends BaseUserDynamic {
     from: DynamicSource.RolePlay;
     from_info?: RolePlayParty;
 }
 
-export interface OtherRecruitDynamic extends BaseUserDynamic {
+interface OtherRecruitDynamic extends BaseUserDynamic {
     from: DynamicSource.Other;
     from_info?: OtherParty;
 }

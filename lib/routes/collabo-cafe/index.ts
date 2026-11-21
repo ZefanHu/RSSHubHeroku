@@ -1,6 +1,8 @@
-import { Data, Route } from '@/types';
-import ofetch from '@/utils/ofetch';
 import { load } from 'cheerio';
+
+import type { Data, Route } from '@/types';
+import ofetch from '@/utils/ofetch';
+
 import { parseItems } from './parser';
 
 export const handler = async (): Promise<Data | null> => {
@@ -19,7 +21,7 @@ export const handler = async (): Promise<Data | null> => {
 export const route: Route = {
     path: '/',
     categories: ['anime'],
-    example: '/collabo-cafe/',
+    example: '/collabo-cafe',
     parameters: undefined,
     features: {
         requireConfig: false,

@@ -1,4 +1,5 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
+
 import { getMangaDetails } from './_feed';
 
 export const route: Route = {
@@ -20,7 +21,7 @@ export const route: Route = {
 
 async function handler(ctx) {
     const { id, lang } = ctx.req.param();
-    const mangaDetail = await getMangaDetails(id, lang);
+    const mangaDetail = await getMangaDetails(id, true, lang);
 
     return {
         title: mangaDetail.title,

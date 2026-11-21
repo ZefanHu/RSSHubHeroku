@@ -1,7 +1,8 @@
-import { Route, ViewType } from '@/types';
-import got from '@/utils/got';
 import { config } from '@/config';
 import ConfigNotFoundError from '@/errors/types/config-not-found';
+import type { Route } from '@/types';
+import { ViewType } from '@/types';
+import got from '@/utils/got';
 
 export const route: Route = {
     path: '/stars/:user/:repo',
@@ -44,27 +45,27 @@ async function handler(ctx) {
             Authorization: `bearer ${config.github.access_token}`,
         },
         json: {
-            query: `
-            {
-                repository(owner: "${user}", name: "${repo}") {
-                  stargazers(last: 10) {
-                    edges {
-                      node {
-                        login
-                        avatarUrl
-                      }
+            query: /* GraphQL */ `
+                query ($user: String!, $repo: String!) {
+                    repository(owner: $user, name: $repo) {
+                        stargazers(last: 10) {
+                            edges {
+                                node {
+                                    login
+                                    avatarUrl
+                                }
+                            }
+                        }
                     }
-                  }
                 }
-              }
             `,
+            variables: { user, repo },
         },
     });
 
     const data = response.data.data.repository.stargazers.edges.toReversed();
 
     return {
-        allowEmpty: true,
         title: `${user}/${repo}’s stargazers`,
         link: host,
         item: data.map((follower) => ({
