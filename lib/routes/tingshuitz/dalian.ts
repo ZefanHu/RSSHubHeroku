@@ -1,7 +1,8 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+import { parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/dalian',
@@ -36,12 +37,12 @@ async function handler() {
     const items = $('recordset record')
         .toArray()
         .map((item) => {
-            item = $(item);
+            const $item = $(item);
+            const publishedDate = $item.find('span').text();
             return {
-                title: item.find('a').text().trim(),
-                description: `大连市停水通知：${item.find('a').text().trim()}`,
-                pubDate: parseDate(item.find('span').text(), 'YYYY-MM-DD'),
-                link: item.find('a').attr('href'),
+                title: $item.find('a').text(),
+                pubDate: publishedDate.trim() ? parseDate(publishedDate, 'YYYY-MM-DD') : undefined,
+                link: $item.find('a').attr('href'),
             };
         });
 

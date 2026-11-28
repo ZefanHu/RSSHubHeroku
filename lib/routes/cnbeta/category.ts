@@ -1,9 +1,10 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
+
 import { handler } from './common';
 
 export const route: Route = {
     name: '分类',
-    path: ['/category/:id'],
+    path: '/category/:id',
     example: '/cnbeta/category/movie',
     maintainers: ['nczitzk'],
     parameters: {
@@ -11,8 +12,8 @@ export const route: Route = {
     },
     radar: [
         {
-            source: ['cnbeta.com.tw/category/:id'],
-            target: (params) => `/cnbeta/category/${params.id.replace('.htm', '')}`,
+            source: ['cnbeta.com.tw/category/:id', 'www.cnbeta.com.tw/category/:id'],
+            target: '/category/:id',
         },
     ],
     handler,

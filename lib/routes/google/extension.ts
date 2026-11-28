@@ -1,7 +1,8 @@
-import { Route } from '@/types';
-import ofetch from '@/utils/ofetch';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
+import type { Route } from '@/types';
+import ofetch from '@/utils/ofetch';
+import { parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/chrome/extension/:id',
@@ -41,9 +42,9 @@ async function handler(ctx) {
         item: [
             {
                 title: version,
-                description: $('.JJ3H1e').html(),
+                description: $('.mN52G').html(),
                 link: `https://chrome.google.com/webstore/detail/${id}`,
-                pubDate: parseDate($('.uBIrad div').last().text()),
+                pubDate: parseDate($('.uBIrad div').last().text(), 'MMMM D, YYYY'),
                 guid: version,
                 author: $('.cJI8ee').text(),
             },

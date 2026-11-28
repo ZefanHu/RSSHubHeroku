@@ -1,9 +1,9 @@
-import { Route } from '@/types';
+import { load } from 'cheerio';
+
+import type { DataItem, Route } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
-import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
-import timezone from '@/utils/timezone';
+import { parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/yan/:category?',
@@ -47,12 +47,12 @@ async function handler(ctx) {
     const list = $('.list-4 a[title]')
         .slice(0, 10)
         .toArray()
-        .map((item) => {
-            item = $(item);
+        .map((item): DataItem & { link: string } => {
+            const $item = $(item);
 
             return {
-                title: item.text(),
-                link: `${rootUrl}${item.attr('href').replace(/\.\./, '/')}`,
+                title: $item.text(),
+                link: `${rootUrl}${$item.attr('href')!.replace(/^\.\./, '/')}`,
             };
         });
 
@@ -66,7 +66,7 @@ async function handler(ctx) {
                 const content = load(detailResponse.data);
 
                 item.description = content('.v_news_content').html();
-                item.pubDate = timezone(parseDate(detailResponse.data.match(/发布时间: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/)[1], 'YYYY-MM-DD HH:mm:ss'), +8);
+                item.pubDate = parseDate(detailResponse.data.match(/发布时间: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/)[1], 'YYYY-MM-DD HH:mm:ss', 8);
 
                 return item;
             })

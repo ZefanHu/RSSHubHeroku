@@ -1,14 +1,17 @@
+import type { RouteHandler } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+
 import { config } from '@/config';
-import { createRoute, RouteHandler } from '@hono/zod-openapi';
-import { gitHash, gitDate } from '@/utils/git-hash';
+import { gitDate, gitHash } from '@/utils/git-hash';
 
 const route = createRoute({
     method: 'get',
     path: '/follow/config',
+    description: 'Follow configuration for the current instance',
     tags: ['Follow'],
     responses: {
         200: {
-            description: 'Follow config',
+            description: 'Follow configuration for the current instance',
         },
     },
 });
@@ -21,7 +24,7 @@ const handler: RouteHandler<typeof route> = (ctx) =>
         userLimit: config.follow.userLimit,
         cacheTime: config.cache.routeExpire,
         gitHash,
-        gitDate: gitDate?.getTime(),
+        gitDate: gitDate?.epochMilliseconds,
     });
 
-export { route, handler };
+export { handler, route };

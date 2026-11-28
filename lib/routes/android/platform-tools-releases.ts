@@ -1,7 +1,8 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+import { parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/platform-tools-releases',
@@ -47,20 +48,21 @@ async function handler() {
     const items = $('h4')
         .toArray()
         .map((item) => {
-            item = $(item);
+            const $item = $(item);
 
-            const title = item.attr('data-text');
+            const title = $item.attr('data-text');
+            const date = title?.match(/\((.*)\)/)?.[1];
 
             let description = '';
-            item.nextUntil('h4').each(function () {
-                description += $(this).html();
+            $item.nextUntil('h4').each((_, el) => {
+                description += $(el).html();
             });
 
             return {
-                title,
+                title: title!,
                 description,
-                link: `${currentUrl}#${item.attr('id')}`,
-                pubDate: parseDate(title.match(/\((.*)\)/)[1], 'MMMM YYYY'),
+                link: `${currentUrl}#${$item.attr('id')}`,
+                pubDate: date ? parseDate(date, ['MMMM D, YYYY', 'MMM D, YYYY', 'MMMM YYYY', 'MMM YYYY']) : undefined,
             };
         });
 

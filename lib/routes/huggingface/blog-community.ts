@@ -1,8 +1,10 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
-import cache from '@/utils/cache';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+import pMap from 'p-map';
+
+import type { DataItem, Route } from '@/types';
+import cache from '@/utils/cache';
+import ofetch from '@/utils/ofetch';
+import { parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/blog-community/:sort?',
@@ -37,39 +39,12 @@ export const route: Route = {
     url: 'huggingface.co/blog/community',
 };
 
-interface CommunityBlog {
-    classNames: string;
-    posts: Post[];
-    pagination: Pagination;
-    sort: string;
-    showBackLink: boolean;
-}
-
-interface Pagination {
-    numItemsPerPage: number;
-    numTotalItems: number;
-    pageIndex: number;
-}
-
-interface Post {
-    _id: string;
-    authorData: AuthorData;
-    canonical: boolean;
-    isUpvotedByUser: boolean;
-    numCoauthors: number;
-    publishedAt: string;
-    slug: string;
-    status: Status;
-    title: string;
-    upvotes: number;
-}
-
 interface AuthorData {
     _id?: string;
     avatarUrl: string;
     fullname: string;
     name: string;
-    type: Type;
+    type: 'org' | 'user';
     isPro?: boolean;
     isHf: boolean;
     isHfAdmin: boolean;
@@ -78,44 +53,58 @@ interface AuthorData {
     isEnterprise?: boolean;
 }
 
-export enum Type {
-    Org = 'org',
-    User = 'user',
+interface Post {
+    _id: string;
+    authorsData?: AuthorData[];
+    canonical: boolean;
+    isUpvotedByUser: boolean;
+    numCoauthors: number;
+    publishedAt: string;
+    slug: string;
+    status: string;
+    title: string;
+    upvotes: number;
+    thumbnail?: string;
+    url: string;
 }
 
-export enum Status {
-    Published = 'published',
+interface CommunityBlogApiResponse {
+    posts: Post[];
+    pagination: {
+        numItemsPerPage: number;
+        numTotalItems: number;
+        pageIndex: number;
+    };
 }
 
 async function handler(ctx) {
     const { sort = 'trending' } = ctx.req.param();
-    const { body: response } = await got(`https://huggingface.co/blog/community?sort=${sort}`);
-    const $ = load(response);
+    const { posts } = await ofetch<CommunityBlogApiResponse>(`https://huggingface.co/api/blog/community?sort=${sort}`);
 
-    const data = $('div[data-target="CommunityBlogsContainer"]').attr('data-props');
-    if (!data) {
-        throw new Error('Failed to fetch data from Huggingface Community Articles');
-    }
-    const articles: CommunityBlog = JSON.parse(data);
-    const lists = articles.posts.map((item) => ({
+    const lists = posts.map((item) => ({
         title: item.title,
-        link: `https://huggingface.co/blog/${item.authorData.name}/${item.slug}`,
+        link: `https://huggingface.co${item.url}`,
         pubDate: parseDate(item.publishedAt),
-        author: item.authorData.name,
+        author: item.authorsData?.[0]?.fullname || item.authorsData?.[0]?.name,
+        upvotes: item.upvotes,
+        image: item.thumbnail ? new URL(item.thumbnail, 'https://huggingface.co').href : undefined,
     }));
 
-    const items = await Promise.all(
-        lists.map((item) =>
-            cache.tryGet(item.link, async () => {
-                const { body: response } = await got(item.link);
+    const items: DataItem[] = await pMap(
+        lists,
+        async (item) => {
+            const details = await cache.tryGet(item.link, async () => {
+                const response = await ofetch(item.link);
                 const $ = load(response);
-                $('.mb-4, h1, .mb-6, .not-prose').remove();
+                const content = $('.blog-content > .relative.overflow-clip');
+                content.find('.absolute.not-prose').remove();
                 return {
-                    ...item,
-                    description: $('.blog-content').html(),
+                    description: content.html(),
                 };
-            })
-        )
+            });
+            return { ...item, description: details.description };
+        },
+        { concurrency: 3 }
     );
 
     return {

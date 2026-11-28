@@ -1,9 +1,10 @@
-import { Route, ViewType } from '@/types';
+import { load } from 'cheerio';
+
+import type { DataItem, Route } from '@/types';
+import { ViewType } from '@/types';
 import cache from '@/utils/cache';
 import got from '@/utils/got';
-import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
-import timezone from '@/utils/timezone';
+import { parseDate } from '@/utils/time';
 
 const baseURL = 'https://yysub.net';
 
@@ -38,9 +39,9 @@ export const route: Route = {
     name: '影视资讯',
     maintainers: ['wb121017405'],
     handler,
-    description: `| 全部 | 影视资讯 | 收视快报 | 人人影评  | 人人剧评  | 新剧评测    | 片单推荐 |
-| ---- | -------- | -------- | --------- | --------- | ----------- | -------- |
-|      | news     | report   | m\_review | t\_review | new\_review | recom    |`,
+    description: `| 全部 | 影视资讯 | 收视快报 | 人人影评 | 人人剧评 | 新剧评测   | 片单推荐 |
+| ---- | -------- | -------- | -------- | -------- | ---------- | -------- |
+|      | news     | report   | m_review | t_review | new_review | recom    |`,
 };
 
 async function handler(ctx) {
@@ -52,26 +53,32 @@ async function handler(ctx) {
 
     let items = $('.article-list li .fl-info')
         .toArray()
-        .map((e) => {
-            e = $(e);
+        .map((e): DataItem => {
+            const $e = $(e);
             return {
-                title: e.find('h3 a').text(),
-                link: `${baseURL}${e.find('h3 a').attr('href')}`,
-                author: e.find('p a').text(),
-                pubDate: timezone(parseDate(e.find('p').eq(2).text()), +8),
+                title: $e.find('h3 a').text(),
+                link: `${baseURL}${$e.find('h3 a').attr('href')}`,
+                author: $e.find('p a').text(),
+                pubDate: parseDate(
+                    $e
+                        .find('p')
+                        .eq(2)
+                        .text()
+                        .match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/)?.[0] ?? '',
+                    8
+                ),
             };
         });
 
     items = await Promise.all(
-        items.map((item) =>
-            cache.tryGet(item.link, async () => {
+        items.map(async (item) => ({
+            ...item,
+            description: await cache.tryGet(`yyets:article:description:${item.link}`, async () => {
                 const detailResponse = await got(item.link);
                 const content = load(detailResponse.data);
-
-                item.description = content('.information-desc').html();
-                return item;
-            })
-        )
+                return content('.information-desc').html();
+            }),
+        }))
     );
 
     return {

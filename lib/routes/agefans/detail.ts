@@ -1,6 +1,8 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+
 import { rootUrl } from './utils';
 
 export const route: Route = {
@@ -18,7 +20,7 @@ export const route: Route = {
     },
     radar: [
         {
-            source: ['agemys.org/detail/:id'],
+            source: ['www.agedm.io/detail/:id'],
         },
     ],
     name: '番剧详情',
@@ -37,11 +39,11 @@ async function handler(ctx) {
         .find('li')
         .toArray()
         .map((item) => {
-            item = $(item);
-            const a = item.find('a');
+            const $item = $(item);
+            const a = $item.find('a');
             return {
                 title: a.text(),
-                link: a.attr('href').replace('http://', 'https://'),
+                link: a.attr('href')!.replace('http://', 'https://'),
             };
         })
         .toReversed();

@@ -1,12 +1,16 @@
-import { Data, Route, ViewType } from '@/types';
+import InvalidParameterError from '@/errors/types/invalid-parameter';
+import type { Data, Route } from '@/types';
+import { ViewType } from '@/types';
+
 import { extractMiniCards, processWithWp, rootUrl } from './utils';
+
 export const route: Route = {
     path: '/collections/:type',
     view: ViewType.Articles,
     categories: ['programming'],
     example: '/css-tricks/collections/2',
     parameters: {
-        category: {
+        type: {
             description: 'Collection Type',
             options: [
                 { value: '3', label: 'Latest CSS Guides' },
@@ -25,8 +29,19 @@ export const route: Route = {
     },
     radar: [
         {
-            source: ['css-tricks.com'],
-            target: '/collections/:type',
+            title: 'Fresh From the Almanac',
+            source: ['css-tricks.com/'],
+            target: '/collections/2',
+        },
+        {
+            title: 'CSS Guides',
+            source: ['css-tricks.com/'],
+            target: '/collections/3',
+        },
+        {
+            title: 'Classic Tricks',
+            source: ['css-tricks.com/'],
+            target: '/collections/4',
         },
     ],
     name: 'CSS Guides',
@@ -40,9 +55,12 @@ const WPTYPE = {
     '4': 'chapters',
 };
 
-async function handler(ctx) {
+async function handler(ctx): Promise<Data> {
     const paramType = ctx.req.param('type');
     const type = paramType === '1' ? '2' : paramType;
+    if (!Object.hasOwn(WPTYPE, type)) {
+        throw new InvalidParameterError(`Unknown collection type: ${paramType}. Use 2 (Almanac), 3 (CSS Guides), or 4 (Classic Tricks).`);
+    }
     const baseSelector = `body > div.page-wrap > section.post-sliders > div:nth-child(${type})`;
     const titleSelector = `${baseSelector}>div.post-slider-header.header-card > h2`;
     const descSelector = `${baseSelector}>div.post-slider-header.header-card > p`;
@@ -58,5 +76,5 @@ async function handler(ctx) {
         language: 'en',
         logo: `${rootUrl}/favicon.ico`,
         icon: `${rootUrl}/favicon.ico`,
-    } as Data;
+    };
 }

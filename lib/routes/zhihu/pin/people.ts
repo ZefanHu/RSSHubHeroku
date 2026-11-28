@@ -1,5 +1,6 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
 import got from '@/utils/got';
+
 import { generateData } from './utils';
 
 export const route: Route = {
@@ -36,8 +37,9 @@ async function handler(ctx) {
     });
 
     return {
-        title: `${data[0].target.author.name}的知乎想法`,
+        title: `${data.length ? data[0].target.author.name : id}的知乎想法`,
         link: `https://www.zhihu.com/people/${id}/pins`,
         item: generateData(data),
+        allowEmpty: data.length === 0,
     };
 }

@@ -1,13 +1,20 @@
-import { Route } from '@/types';
-import cache from '@/utils/cache';
+import pMap from 'p-map';
+
+import type { DataItem, Route } from '@/types';
 import got from '@/utils/got';
-import { parseDate } from '@/utils/parse-date';
+import { parseDate } from '@/utils/time';
+
 import { baseUrl, parseArticle } from './utils';
 
 const rangeMap = {
     daily: '日榜',
     weekly: '周榜',
     monthly: '月榜',
+};
+
+const parseArticleResult = async (item: DataItem) => {
+    const [result] = await Promise.allSettled([parseArticle(item)]);
+    return result;
 };
 
 export const route: Route = {
@@ -53,7 +60,7 @@ async function handler(ctx) {
         };
     });
 
-    const results = await Promise.allSettled(list.map((item) => parseArticle(item, cache.tryGet)));
+    const results = await pMap(list, parseArticleResult, { concurrency: 3 });
     const result = results.filter((result) => result.status === 'fulfilled').map((result) => result.value);
 
     return {

@@ -1,7 +1,9 @@
-import { Route } from '@/types';
-import ofetch from '@/utils/ofetch';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
+import type { Route } from '@/types';
+import ofetch from '@/utils/ofetch';
+import { parseDate } from '@/utils/time';
+
 export const route: Route = {
     path: '/security-bulletin',
     categories: ['program-update'],
@@ -48,7 +50,7 @@ async function handler() {
                 title: `Bulletin ${a.text()}`,
                 description: $item.find('td:nth-child(2)').html(),
                 link: `${baseUrl}${a.attr('href')}`,
-                pubDate: parseDate($item.find('td:nth-child(3)').text()),
+                pubDate: parseDate($item.find('td:nth-child(3)').text(), 'MMMM D, YYYY'),
             };
         });
 

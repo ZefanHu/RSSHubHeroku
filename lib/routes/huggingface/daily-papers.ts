@@ -1,7 +1,8 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
+
+import type { Route } from '@/types';
+import got from '@/utils/got';
+import { formatDate, parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/daily-papers/:cycle?/:voteFliter?',
@@ -32,7 +33,7 @@ interface Paper {
     id: string;
     summary: string;
     upvotes: number;
-    authors: { name: string }[];
+    authors: Array<{ name: string }>;
 }
 
 interface DailyPaperItem {
@@ -54,10 +55,10 @@ async function handler(ctx) {
             break;
         case 'week':
             // We don't actually need to get the week number, because huggingface.co/papers/week/YYYY-W52 will redirect to the latest week
-            url = `https://huggingface.co/papers/week/${new Date().getFullYear()}-W52`;
+            url = `https://huggingface.co/papers/week/${Temporal.Now.zonedDateTimeISO('UTC').year}-W52`;
             break;
         case 'month':
-            url = `https://huggingface.co/papers/month/${new Date().toISOString().slice(0, 7)}`;
+            url = `https://huggingface.co/papers/month/${formatDate(Temporal.Now.instant(), 'YYYY-MM')}`;
             break;
         default:
             throw new Error(`Invalid cycle: ${cycle}`);
@@ -65,7 +66,11 @@ async function handler(ctx) {
 
     const { body: response } = await got(url);
     const $ = load(response);
-    const papers = $('main > div[data-target="DailyPapers"]').data('props') as PapersData;
+    const props = $('div[data-target="DailyPapers"]').attr('data-props');
+    if (!props) {
+        throw new Error(`Daily papers data not found on ${url}`);
+    }
+    const papers: PapersData = JSON.parse(props);
 
     const items = papers.dailyPapers
         .filter((item) => item.paper.upvotes >= voteFliter)

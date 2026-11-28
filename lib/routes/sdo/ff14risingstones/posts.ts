@@ -1,8 +1,11 @@
-import type { Route } from '@/types';
-import { INDEX_URL, LOGO_URL, POST_PART, POST_TYPE, REQUIRE_CONFIG } from './constant';
 import type { Context } from 'hono';
-import { checkConfig, generatePostFeeds } from './utils';
+
+import type { Route } from '@/types';
+import { getRouteLimit } from '@/utils/route-limit';
+
 import { getPosts } from './api';
+import { INDEX_URL, LOGO_URL, POST_PART, POST_TYPE, REQUIRE_CONFIG } from './constant';
+import { checkConfig, generatePostFeeds } from './utils';
 
 export const route: Route = {
     path: '/ff14risingstones/posts/:pid?/:type?',
@@ -49,7 +52,7 @@ export const route: Route = {
 async function handler(ctx: Context) {
     checkConfig();
 
-    const limit = ctx.req.query('limit') || 20;
+    const limit = getRouteLimit(ctx, 20);
 
     const pid =
         ctx.req
@@ -72,7 +75,7 @@ async function handler(ctx: Context) {
     });
 
     return {
-        title: `石之家 - ${POST_TYPE[type] ?? ''}帖文${postPart ? ` - ${postPart}` : ''}`,
+        title: `石之家 - ${POST_TYPE[type!] ?? ''}帖文${postPart ? ` - ${postPart}` : ''}`,
         link: `${INDEX_URL}#/post`,
         image: LOGO_URL,
         item: await generatePostFeeds(posts),

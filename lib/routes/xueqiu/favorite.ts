@@ -1,9 +1,10 @@
-import { Route } from '@/types';
-import got from '@/utils/got';
 import queryString from 'query-string';
-import { parseDate } from '@/utils/parse-date';
+
 import { parseToken } from '@/routes/xueqiu/cookies';
+import type { Route } from '@/types';
+import got from '@/utils/got';
 import ofetch from '@/utils/ofetch';
+import { parseDate } from '@/utils/time';
 
 export const route: Route = {
     path: '/favorite/:id',
@@ -32,10 +33,10 @@ async function handler(ctx) {
     const id = ctx.req.param('id');
 
     const link = `https://xueqiu.com/u/${id}`;
-    const token = await parseToken(link);
+    const token = await parseToken();
     const res2 = await got({
         method: 'get',
-        url: 'https://xueqiu.com/favorites.json',
+        url: 'https://api.xueqiu.com/favorites.json',
         searchParams: queryString.stringify({
             userid: id,
         }),
@@ -48,7 +49,7 @@ async function handler(ctx) {
 
     const {
         user: { screen_name },
-    } = await ofetch('https://xueqiu.com/statuses/original/show.json', {
+    } = await ofetch('https://api.xueqiu.com/statuses/original/show.json', {
         query: {
             user_id: id,
         },

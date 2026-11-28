@@ -1,7 +1,7 @@
-import ofetch from '@/utils/ofetch';
 import { load } from 'cheerio';
-import { parseDate } from '@/utils/parse-date';
-import timezone from '@/utils/timezone';
+
+import ofetch from '@/utils/ofetch';
+import { parseDate } from '@/utils/time';
 
 const ENDPOINT = 'https://misskon.com/wp-json/wp/v2';
 const getPosts = async (searchParams) => {
@@ -10,15 +10,14 @@ const getPosts = async (searchParams) => {
     const data = await ofetch(url.href);
     return data.map((item) => {
         const $ = load(item.content.rendered);
-        $('input').each(function () {
-            $(this).replaceWith($(this).attr('value') || '');
+        $('input').each((_, el) => {
+            $(el).replaceWith($(el).attr('value') || '');
         });
-        $('script').remove();
         return {
             title: item.title.rendered,
             link: item.link,
             description: $.html(),
-            pubDate: timezone(parseDate(item.date_gmt), 0),
+            pubDate: parseDate(item.date_gmt, 0),
             category: item._embedded['wp:term']
                 .flat()
                 .filter((x) => x.taxonomy === 'post_tag')
@@ -27,7 +26,7 @@ const getPosts = async (searchParams) => {
     });
 };
 const getTags = async (slug) => {
-    const data = await ofetch(`${ENDPOINT}/tags?slug=${slug}`);
+    const data = await ofetch(`${ENDPOINT}/tags`, { query: { slug } });
     if (data.length === 0) {
         throw new Error(`Invalid tag slug: ${slug}`);
     }
@@ -38,4 +37,4 @@ const getTags = async (slug) => {
         description: data[0].description,
     };
 };
-export { ENDPOINT, getPosts, getTags };
+export { getPosts, getTags };

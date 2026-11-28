@@ -1,7 +1,8 @@
-import { Route } from '@/types';
+import type { Route } from '@/types';
 import ofetch from '@/utils/ofetch';
-import { art } from '@/utils/render';
-import path from 'node:path';
+
+import { renderDescription } from './templates/description';
+
 const baseUrl = 'https://www.openrice.com';
 
 export const route: Route = {
@@ -12,11 +13,9 @@ export const route: Route = {
     example: '/openrice/zh/hongkong/offers',
     parameters: { lang: '语言，缺省为 zh' },
     name: '香港餐廳精選優惠券',
-    description: `
-| 简体 | 繁體 | EN |
-| ----- | ------ | ----- |
-| zh-cn | zh | en |
-  `,
+    description: `| 简体  | 繁體 | EN |
+| ----- | ---- | -- |
+| zh-cn | zh   | en |`,
 };
 
 async function handler(ctx) {
@@ -55,10 +54,10 @@ async function handler(ctx) {
 
     const resultList = data.map((item) => {
         const title = item.title ?? '';
-        const link = baseUrl + item.urlUI;
+        const link = new URL(item.urlUI, baseUrl).href;
         const coverImg = item.doorPhotoUI.urls.full ?? '';
         const descriptionText = item.couponType === 0 ? item.poiNameUI : `${item.desc} (${item.startTimeUI} - ${item.expireTimeUI}) [${item.multiplePoiDistrictName}]`;
-        const description = art(path.join(__dirname, 'templates/description.art'), {
+        const description = renderDescription({
             description: descriptionText,
             image: coverImg,
         });

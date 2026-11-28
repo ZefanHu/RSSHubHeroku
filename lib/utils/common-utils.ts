@@ -1,30 +1,21 @@
-import { parseDate } from '@/utils/parse-date';
-import title from 'title';
 import os from 'node:os';
+
+import title from 'title';
+
+import { config } from '@/config';
 
 // convert a string into title case
 const toTitleCase = (str: string) => title(str);
 
-const rWhiteSpace = /\s+/;
-const rAllWhiteSpace = /\s+/g;
+const rWhitespace = /\s+/;
+const rAllWhitespace = /\s+/g;
 
 // collapse all whitespaces into a single space (like "white-space: normal;" would do), and trim
 const collapseWhitespace = (str?: string | null) => {
-    if (str && rWhiteSpace.test(str)) {
-        return str.replaceAll(rAllWhiteSpace, ' ').trim();
+    if (str && rWhitespace.test(str)) {
+        return str.replaceAll(rAllWhitespace, ' ').trim();
     }
     return str;
-};
-
-const convertDateToISO8601 = (date?: string | Date | number | null) => {
-    if (!date) {
-        return date;
-    }
-    if (typeof date !== 'object') {
-        // some routes may call `.toUTCString()` before passing the date to ctx...
-        date = parseDate(date);
-    }
-    return date.toISOString();
 };
 
 const getSubPath = (ctx) => {
@@ -39,8 +30,10 @@ const getLocalhostAddress = () => {
         .filter((iface) => iface?.family === 'IPv4' && !iface.internal)
         .map((iface) => iface?.address)
         .filter(Boolean);
-    address.push('[::]');
+    if (!config.disableIPv6) {
+        address.push('[::]');
+    }
     return address;
 };
 
-export { toTitleCase, collapseWhitespace, convertDateToISO8601, getSubPath, getLocalhostAddress };
+export { collapseWhitespace, getLocalhostAddress, getSubPath, toTitleCase };
